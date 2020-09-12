@@ -7,6 +7,13 @@ from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
 
 
+def file_len(fname):
+    with open(fname) as f:
+        for i, l in enumerate(f):
+            pass
+    return i + 1
+
+
 class WCFFinder:
     def __init__(self, stemGroups):
         self.groups = stemGroups
@@ -70,14 +77,24 @@ stemGroups = []
 listOfAllWords = []
 listOfAllWordsStem = []
 startTime = time.time()
+n = 1
+i = 0
+numLines = file_len("dictionary.txt")
+
+stemWordsSeen = set()
+alreadySeen = False
+
 for line in dictionaryWiki:
     words = line.split(" : ")
     listOfAllWords.append(words[0])
     groupToAdd = -1
-    for i in range(len(stemGroups)):
-        if stemGroups[i].getStem() == words[2]:
-            groupToAdd = i
-            break
+    if words[2] in stemWordsSeen:
+        alreadySeen = True
+    if alreadySeen:
+        for i in range(len(stemGroups)):
+            if stemGroups[i].getStem() == words[2]:
+                groupToAdd = i
+                break
     if groupToAdd == -1:
         newStemGroup = stemGroup(ps.stem(words[0]))
         newStemGroup.add(words[0], words[1])
@@ -86,6 +103,14 @@ for line in dictionaryWiki:
     else:
         stemGroups[groupToAdd].add(words[0], words[1])
         listOfAllWordsStem.append(newStemGroup)
+    i += 1
+    alreadySeen = False
+    if time.time() - startTime > (600 * n):
+        n += 1
+        print('{:3.5f} minutes since starting'.format((time.time() - startTime)/60))
+        print('{:3.5f} % percent finished'.format((i/numLines * 100)))
+        print(str(i) + " out of " + str(numLines))
+        print()
 
 WCF = WCFFinder(stemGroups)
 
@@ -99,7 +124,7 @@ WCFG = [[-1 for x in range(len(listOfAllWords))] for y in range(len(listOfAllWor
 for i in range(len(listOfAllWords)):
     output.write(listOfAllWords[i])
     for j in range(len(listOfAllWords)):
-        if time.time() - startTime > (30 * n):
+        if time.time() - startTime > (600 * n):
             n += 1
             print('{:3.5f} minutes since starting'.format((time.time() - startTime)/60))
             print('{:3.5f} % percent finished'.format((i/len(listOfAllWords) * 100)))
